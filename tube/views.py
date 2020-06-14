@@ -5,6 +5,7 @@ from wsgiref.util import FileWrapper
 
 from django.contrib.auth import logout
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.http.response import StreamingHttpResponse, HttpResponse
 from django.template import loader
@@ -18,42 +19,34 @@ from .models import Video, Tag, VideoTag
 range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
 
 
-class VideoView(FormView):
+class VideoView(LoginRequiredMixin, FormView):
+    login_url = reverse_lazy('login')
     template_name = 'tube/upload_file.html'
     form_class = UploadFileForm
 
-    def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            return super().get(request, *args, **kwargs)
-        else:
-            return HttpResponseRedirect(reverse('login'))
-
     def form_valid(self, form):
-        if self.request.user.is_authenticated:
-            kwargs = self.get_form_kwargs()
-            tags_str = kwargs['data'].get('tags')
-            tags = [x.strip('#') for x in tags_str.split()]
-            existed_tags = {tag.name: tag.id for tag
-                            in Tag.objects.filter(name__in=tags)}
-            tags_to_create = [tag for tag in tags if tag not in existed_tags]
-            tags_ids = list(existed_tags.values())
-            for tag in tags_to_create:
-                created_tag = Tag.objects.create(name=tag)
-                tags_ids.append(created_tag.id)
+        kwargs = self.get_form_kwargs()
+        tags_str = kwargs['data'].get('tags')
+        tags = [x.strip('#') for x in tags_str.split()]
+        existed_tags = {tag.name: tag.id for tag
+                        in Tag.objects.filter(name__in=tags)}
+        tags_to_create = [tag for tag in tags if tag not in existed_tags]
+        tags_ids = list(existed_tags.values())
+        for tag in tags_to_create:
+            created_tag = Tag.objects.create(name=tag)
+            tags_ids.append(created_tag.id)
 
-            video = Video(
-                file=kwargs.get('files')['video'],
-                title=kwargs['data'].get('title'),
-            )
-            video.save()
-            video_id = video.id
+        video = Video(
+            file=kwargs.get('files')['video'],
+            title=kwargs['data'].get('title'),
+        )
+        video.save()
+        video_id = video.id
 
-            for tags_id in tags_ids:
-                VideoTag.objects.create(tag_id=tags_id, video_id=video_id)
+        for tags_id in tags_ids:
+            VideoTag.objects.create(tag_id=tags_id, video_id=video_id)
 
-            return HttpResponseRedirect(reverse('main'))
-        else:
-            return HttpResponseRedirect(reverse('login'))
+        return HttpResponseRedirect(reverse('main'))
 
 
 class RangeFileWrapper(object):
