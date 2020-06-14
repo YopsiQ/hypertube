@@ -1,17 +1,15 @@
 {% extends 'tube/base.html' %}
 
-{% block title %} Main {% endblock %}
+{% block title %} Signup {% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block user %}{% endblock %}
 
 {% block content %}
-<form action="{% url 'signup' %}" method="post">
+<form method="post" action="{% url 'signup' %}">
     {% csrf_token %}
-    {{ form }}
-    <label for="login">Login: </label>
-    <input id="login" type="text" name="login" value="{{ login }}" required>
-    <label for="password">Password: </label>
-    <input id="password" type="password" name="password" value="{{ password }}" required>
-    <label for="email">Email: </label>
-    <input id="email" type="text" name="email" value="{{ email }}" required>
-    <input type="submit" value="sign up">
+	{{ form.as_p }}
+	<input class="btn_spec" type="submit" value="Submit"/>
 </form>
 {% endblock %}

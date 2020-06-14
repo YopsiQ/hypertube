@@ -4,12 +4,12 @@ import mimetypes
 from wsgiref.util import FileWrapper
 
 from django.contrib.auth import logout
-from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponseRedirect
 from django.http.response import StreamingHttpResponse, HttpResponse
 from django.template import loader
-from django.urls import reverse
-from django.views.generic import FormView, View
+from django.urls import reverse, reverse_lazy
+from django.views.generic import FormView, CreateView
 
 from .forms import UploadFileForm
 from .models import Video, Tag, VideoTag
@@ -162,16 +162,7 @@ def logout_view(request):
     return HttpResponseRedirect(reverse('main'))
 
 
-class SignUpView(View):
-
-    def get(self, request):
-        template = loader.get_template('tube/signup.html')
-        context = {}
-        return HttpResponse(template.render(context, request))
-
-    def post(self, request):
-        login = request.POST.get('login')
-        password = request.POST.get('password')
-        email = request.POST.get('email')
-        User.objects.create_user(login, email, password)
-        return HttpResponseRedirect(reverse('main'))
+class SignUpView(CreateView):
+    form_class = UserCreationForm
+    success_url = reverse_lazy('login')
+    template_name = 'tube/signup.html'
