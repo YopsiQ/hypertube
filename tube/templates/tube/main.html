@@ -1,5 +1,9 @@
-<h2><a href="/tube/">Hypertube</a></h2>
-<form action="/tube/" method="get">
+{% extends 'tube/base.html' %}
+
+{% block title %} Main {% endblock %}
+
+{% block content %}
+<form action="{% url 'main' %}" method="get">
     <input type="search" id="q" name="q" value="{{ q }}">
     <input type="submit" value="search">
 </form>
@@ -16,3 +20,4 @@
 {% endif %}
 
 <a href="/tube/upload/">Upload video</a>
+{% endblock %}

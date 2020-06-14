@@ -3,8 +3,7 @@ import re
 import mimetypes
 from wsgiref.util import FileWrapper
 
-
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.http.response import StreamingHttpResponse, HttpResponse
@@ -27,7 +26,7 @@ class VideoView(FormView):
         if request.user.is_authenticated:
             return super().get(request, *args, **kwargs)
         else:
-            return HttpResponseRedirect(reverse('auth'))
+            return HttpResponseRedirect(reverse('login'))
 
     def form_valid(self, form):
         if self.request.user.is_authenticated:
@@ -52,9 +51,9 @@ class VideoView(FormView):
             for tags_id in tags_ids:
                 VideoTag.objects.create(tag_id=tags_id, video_id=video_id)
 
-            return HttpResponseRedirect(reverse('main_page'))
+            return HttpResponseRedirect(reverse('main'))
         else:
-            return HttpResponseRedirect(reverse('auth'))
+            return HttpResponseRedirect(reverse('login'))
 
 
 class RangeFileWrapper(object):
@@ -136,7 +135,7 @@ def watch(request, video_id):
     return HttpResponse(template.render(context, request))
 
 
-def main_page(request):
+def main(request):
     q = request.GET.get('q', '')
     tag = request.GET.get('tag', '')
     if tag:
@@ -147,7 +146,7 @@ def main_page(request):
     if q:
         videos = videos.filter(title__icontains=q)
 
-    template = loader.get_template('tube/main_page.html')
+    template = loader.get_template('tube/main.html')
 
     context = {
         'q': q,
@@ -158,31 +157,15 @@ def main_page(request):
     return HttpResponse(template.render(context, request))
 
 
-class AuthView(View):
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect(reverse('main'))
+
+
+class SignUpView(View):
 
     def get(self, request):
-        template = loader.get_template('tube/auth.html')
-        context = {}
-        return HttpResponse(template.render(context, request))
-
-    def post(self, request):
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            main_page = reverse('main_page')
-            return HttpResponseRedirect(main_page)
-        else:
-            template = loader.get_template('tube/auth.html')
-            context = {}
-            return HttpResponse(template.render(context, request))
-
-
-class RegisterView(View):
-
-    def get(self, request):
-        template = loader.get_template('tube/register.html')
+        template = loader.get_template('tube/signup.html')
         context = {}
         return HttpResponse(template.render(context, request))
 
@@ -191,5 +174,4 @@ class RegisterView(View):
         password = request.POST.get('password')
         email = request.POST.get('email')
         User.objects.create_user(login, email, password)
-        main_page = reverse('main_page')
-        return HttpResponseRedirect(main_page)
+        return HttpResponseRedirect(reverse('main'))
