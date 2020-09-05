@@ -1,22 +1,19 @@
 import os
-import re
 import mimetypes
 from wsgiref.util import FileWrapper
 
+from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
-from django.http.response import StreamingHttpResponse, HttpResponse
+from django.http.response import HttpResponse
 from django.template import loader
 from django.urls import reverse, reverse_lazy
 from django.views.generic import FormView, CreateView
 
 from .forms import UploadFileForm
 from .models import Video, Tag, VideoTag
-
-
-range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
 
 
 class VideoView(LoginRequiredMixin, FormView):
@@ -50,12 +47,12 @@ class VideoView(LoginRequiredMixin, FormView):
 
 
 def uploaded_stream_detail(request, name):
-    path = f'media/{name}'
+    path = os.path.join(settings.MEDIA_ROOT, name)
     size = os.path.getsize(path)
     content_type, encoding = mimetypes.guess_type(path)
     content_type = content_type or 'application/octet-stream'
-    response = StreamingHttpResponse(FileWrapper(open(path, 'rb')),
-                                 content_type=content_type)
+    response = HttpResponse(FileWrapper(open(path, 'rb')),
+                            content_type=content_type)
     response['Content-Length'] = str(size)
     response['Accept-Ranges'] = 'bytes'
     return response
